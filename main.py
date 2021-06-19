@@ -1,8 +1,11 @@
 import numpy as np
+import sys
 import re, os
 import nltk
-import sklearn
+import seaborn as sns
 from sklearn import naive_bayes
+from sklearn import tree
+from sklearn import svm
 #Used for importing the dataset
 from sklearn.datasets import load_files
 nltk.download('stopwords')
@@ -29,9 +32,9 @@ def save_model(classifier):
 
 
 def evaluate_model(category_test, category_prediction):
-    print("Confusion matrix: ", confusion_matrix(category_test, category_prediction))
+    #print("Confusion matrix: ", confusion_matrix(category_test, category_prediction))
     print(classification_report(category_test,category_prediction))
-    print("Accuracy: ", accuracy_score(category_test,category_prediction))
+    print("Accuracy: ", round(accuracy_score(category_test,category_prediction),2))
 
 
 def bag_of_words(processed_data):
@@ -39,7 +42,7 @@ def bag_of_words(processed_data):
     # min_df - minimum amount of texts in which the feature is appearing
     # max_df - maximum percentage of texts in which the feature is appearing
     # stop_words - words that do not contain anything useful for the processing
-    vectorizer = CountVectorizer(max_features=1800, min_df=5, max_df=0.8, stop_words=stopwords.words('english'))
+    vectorizer = CountVectorizer(max_features=2000, min_df=35, stop_words=stopwords.words('english'))
     number_representation = vectorizer.fit_transform(processed_data).toarray()
     return number_representation
 
@@ -74,9 +77,11 @@ def load_data(path):
 
 choice = int(input('''1-Random Forest Classifier
 2-Naive Bayes Classifier
-0-Make predictions
+3-Decision Tree Classification
+4-SVM
 '''))
-abs_path_docs = os.path.abspath(f"../mlarr_text")
+input_file = sys.argv[1]
+abs_path_docs = os.path.abspath(input_file)
 loaded_data, target_categories = load_data(abs_path_docs)
 processed_data = text_preprocessing(loaded_data)
 bag_of_words_output = bag_of_words(processed_data)
@@ -85,7 +90,7 @@ bag_train, bag_test, target_train, target_test = train_test_split(bag_of_words_o
 
 
 if choice == 1:
-    classifier = RandomForestClassifier(n_estimators=2000, random_state=0)
+    classifier = RandomForestClassifier(n_estimators=1000, random_state=0)
     classifier.fit(bag_train,target_train)
     rfc_prediction = classifier.predict(bag_test)
     evaluate_model(target_test,rfc_prediction)
@@ -96,6 +101,19 @@ if choice == 2:
     naive_bayes.fit(bag_train, target_train)
     nbc_prediction = naive_bayes.predict(bag_test)
     evaluate_model(target_test, nbc_prediction)
+
+if choice == 3:
+    decision_tree = tree.DecisionTreeClassifier()
+    decision_tree = decision_tree.fit(bag_train,target_train)
+    decisiontree_prediction = decision_tree.predict(bag_test)
+    evaluate_model(target_test,decisiontree_prediction)
+
+if choice == 4:
+    svm_cl = svm.SVC(kernel='linear')
+    svm_cl = svm_cl.fit(bag_train, target_train)
+    svm_prediction = svm_cl.predict(bag_test)
+    evaluate_model(target_test,svm_prediction)
+
 
 if choice == 0:
     with open('model_classifier','rb') as trained_model:
